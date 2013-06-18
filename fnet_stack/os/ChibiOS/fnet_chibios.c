@@ -121,6 +121,25 @@ void fnet_os_mutex_release(void)
 
 #if FNET_CFG_OS_TIMER
 
+/*
+ * GPT2 callback.
+ */
+static void gpt_fnet_cb(GPTDriver *gptp) {
+
+  (void)gptp;
+  chSysLockFromIsr();
+  fnet_timer_ticks_inc();
+  chSysUnlockFromIsr();
+}
+
+/*
+ * GPT2 configuration.
+ */
+static const GPTConfig gpt_fnet_cfg = {
+  100000,    /* 100kHz timer clock.*/
+  gpt_fnet_cb    /* Timer callback.*/
+};
+
 /************************************************************************
 * NAME: fnet_os_timer_init
 *
@@ -128,7 +147,8 @@ void fnet_os_mutex_release(void)
 *************************************************************************/
 int fnet_os_timer_init( unsigned int period_ms )
 {
-	/* <PUT HERE ChibiOS event initialization, etc.> */
+   gptStart(&FNET_CHIBIOS_TIMER, &gpt_fnet_cfg);
+   gptStartContinuous(&FNET_CHIBIOS_TIMER, 100); /* 1ms tick */
 }
 
 /************************************************************************
@@ -139,7 +159,7 @@ int fnet_os_timer_init( unsigned int period_ms )
 *************************************************************************/
 void fnet_os_timer_release( void )
 {
-	/* <PUT HERE ChibiOS event release, etc.> */
+   gptStopTimer(&FNET_CHIBIOS_TIMER);
 }
 
 #endif /* FNET_CFG_OS_TIMER */

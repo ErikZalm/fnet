@@ -92,7 +92,7 @@
 	#endif	
 
    #ifndef FNET_CFG_OS_CHIBIOS
-      #define FNET_CFG_OS_CHIBIOS (0)
+      #define FNET_CFG_OS_CHIBIOS (1)
    #endif
 	/*-----------*/
     #if FNET_CFG_OS_UCOSIII /* uCOS-III */

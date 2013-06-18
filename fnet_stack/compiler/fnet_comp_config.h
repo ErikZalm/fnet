@@ -90,7 +90,7 @@
 
 /* GNU GCC */
 #ifndef FNET_CFG_COMP_GNUC
-    #define FNET_CFG_COMP_GNUC   (0)
+    #define FNET_CFG_COMP_GNUC   (1)
 #endif
 
 #if FNET_CFG_COMP_CW

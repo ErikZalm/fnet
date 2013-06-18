@@ -47,10 +47,13 @@
     #define FNET_CFG_OS_ISR     (0)
 #endif
 #ifndef FNET_CFG_OS_MUTEX
-    #define FNET_CFG_OS_MUTEX   (0)
+    #define FNET_CFG_OS_MUTEX   (1)
 #endif
 #ifndef FNET_CFG_OS_EVENT
     #define FNET_CFG_OS_EVENT   (1)
+#endif
+#ifndef FNET_CFG_OS_TIMER
+   #define FNET_CFG_OS_TIMER   (1)
 #endif
 
 #endif /* FNET_FREERTOS_CONFIG_H_ */
