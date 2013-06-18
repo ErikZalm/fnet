@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="no" ?>
+<fpconfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="fp_config.xsd">
+
+  <targetconfwindow>
+    <usecustomsettings>false</usecustomsettings>
+    <targetprocessor>5282</targetprocessor>
+    <connection/>
+    <usetargetinit>true</usetargetinit>
+    <targetinitfile>{CodeWarrior}\ColdFire_Support\Initialization_Files\m5282evb.cfg</targetinitfile>
+    <targetmembuffaddr>0x20000000</targetmembuffaddr>
+    <targetmembuffsize>0x00008000</targetmembuffsize>
+    <enablelogging>true</enablelogging>
+    <verifywrites>false</verifywrites>
+  </targetconfwindow>
+
+  <flashconfwindow>
+    <membaseaddr>0x00000000</membaseaddr>
+    <device>CFM_MCF5282</device>
+    <organization>16Kx32x1</organization>
+    <flashstart>0x00000000</flashstart>
+    <flashend>0x0007FFFF</flashend>
+  </flashconfwindow>
+
+  <programverifywindow>
+    <useselectedfile>false</useselectedfile>
+    <projbuildtargetfile>nofile</projbuildtargetfile>
+    <fileiotype>Auto Detect</fileiotype>
+    <restrictaddrrange>false</restrictaddrrange>
+    <restrictaddrrangestart>0xF0000000</restrictaddrrangestart>
+    <restrictaddrrangeend>0xF007FFFF</restrictaddrrangeend>
+    <applyaddroffset>false</applyaddroffset>
+    <addroffset>0xF0000000</addroffset>
+  </programverifywindow>
+
+  <eraseblankcheckwindow>
+    <eraseallsectors>true</eraseallsectors>
+    <sector/>
+    <processsectorsindividually>false</processsectorsindividually>
+  </eraseblankcheckwindow>
+
+  <checksumwindow>
+    <computechecksumover>FileOnTarg</computechecksumover>
+    <addrstart>0xF0000000</addrstart>
+    <addrsize>0xF000FFFF</addrsize>
+  </checksumwindow>
+
+</fpconfig>
