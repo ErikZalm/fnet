@@ -68,6 +68,7 @@
  *            - @c FNET_CFG_OS_UCOSIII  = Used OS is the uCOS-III.
  *            - @c FNET_CFG_OS_BRTOS    = Used OS is the BRTOS (http://code.google.com/p/brtos/).
  *            - @c FNET_CFG_OS_FREERTOS = Used OS is the FreeRTOS. 
+ *            - @c FNET_CFG_OS_CHIBIOS  = Used OS is the ChibiOS (http://www.chibios.org).
  *            @n @n
  *            Selected OS definition should be only one and must be defined as 1. 
  *            All others may be defined but must have the 0 value.
@@ -90,6 +91,9 @@
 		#define FNET_CFG_OS_FREERTOS (0)
 	#endif	
 
+   #ifndef FNET_CFG_OS_CHIBIOS
+      #define FNET_CFG_OS_CHIBIOS (0)
+   #endif
 	/*-----------*/
     #if FNET_CFG_OS_UCOSIII /* uCOS-III */
         #ifdef FNET_OS_STR
@@ -118,6 +122,15 @@
         #define FNET_OS_STR    "FreeRTOS"
     #endif	
 
+    #if FNET_CFG_OS_CHIBIOS /* ChibiOS */
+        #ifdef FNET_OS_STR
+            #error "More than one OS selected FNET_OS_XXXX"
+        #endif
+
+        #include "fnet_chibios_config.h"
+        #define FNET_OS_STR    "ChibiOS"
+    #endif
+
 #endif /* FNET_CFG_OS*/
 
 /*-----------*/
@@ -132,6 +145,9 @@
 
     #undef  FNET_CFG_OS_FREERTOS
     #define FNET_CFG_OS_FREERTOS    (0)
+
+    #undef  FNET_CFG_OS_CHIBIOS
+    #define FNET_CFG_OS_CHIBIOS     (0)
 
 #endif
 
