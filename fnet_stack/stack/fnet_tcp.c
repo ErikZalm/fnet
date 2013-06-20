@@ -101,7 +101,7 @@ static void fnet_tcp_delpartialsk( fnet_socket_t *sk );
 static void fnet_tcp_delincomingsk( fnet_socket_t *sk );
 static void fnet_tcp_delcb( fnet_tcp_control_t *cb );
 #if !FNET_CFG_TCP_DISCARD_OUT_OF_ORDER
-    void fnet_tcp_deletetmpbuf( fnet_tcp_control_t *cb );
+    static void fnet_tcp_deletetmpbuf( fnet_tcp_control_t *cb );
 #endif
 static void fnet_tcp_delsk( fnet_socket_t ** head, fnet_socket_t *sk );
 static int fnet_tcp_sendanydata( fnet_socket_t *sk, int oneexec );

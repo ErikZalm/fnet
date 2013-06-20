@@ -40,10 +40,12 @@
 ***************************************************************************/ 
 
 #include	"fnet.h"
+#include "ch.h"
+#include "hal.h"
 
 #if FNET_CFG_OS && FNET_CFG_OS_CHIBIOS
 
-static BSEMAPHORE_DECL(FNetSemaphore, 0);
+static BSEMAPHORE_DECL(FnetSemaphore, 0);
 static MUTEX_DECL(FnetMutex);
 
 /************************************************************************

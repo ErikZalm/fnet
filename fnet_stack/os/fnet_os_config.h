@@ -57,7 +57,7 @@
  *               - @b @c 0 = is disabled. It is used bare-metal FNET stack (Default value).
  ******************************************************************************/
 #ifndef FNET_CFG_OS
-	#define FNET_CFG_OS    (0)
+	#define FNET_CFG_OS    (1)
 #endif
 
 /**************************************************************************/ /*!

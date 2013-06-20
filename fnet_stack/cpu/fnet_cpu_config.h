@@ -107,6 +107,10 @@
     #define FNET_CFG_CPU_MPC564xBC  (0)
 #endif  
 
+#ifndef FNET_CFG_CPU_STM32F4
+    #define FNET_CFG_CPU_STM32F4    (0)
+#endif
+
 /*********** MFC ********************/
 #if FNET_CFG_CPU_MCF52235 /* Kirin2 */
     #ifdef FNET_CPU_STR
@@ -204,6 +208,15 @@
     #define FNET_CPU_STR    "MPC56xBC"
 #endif
 
+#if FNET_CFG_CPU_STM32F4 /* Bolero3M */
+    #ifdef FNET_CPU_STR
+        #error "More than one CPU selected FNET_CPU_XXXX"
+    #endif
+
+//    #include "fnet_mpc564xbc_config.h"
+    #define FNET_CPU_STR    "STM32F4"
+#endif
+
 /*-----------*/
 #ifndef FNET_CPU_STR
     #error "Select/Define proper CPU FNET_CPU_XXXX !"
@@ -268,8 +281,8 @@
  *           startup code.
  ******************************************************************************/
 #ifndef FNET_CFG_CPU_CLOCK_HZ 
-    #error "Please define  FNET_CFG_CPU_CLOCK_HZ"
-    #define FNET_CFG_CPU_CLOCK_HZ       (xx) /* Just only for Doxygen documentation */
+//TODO    #error "Please define  FNET_CFG_CPU_CLOCK_HZ"
+//TODO    #define FNET_CFG_CPU_CLOCK_HZ       (xx) /* Just only for Doxygen documentation */
 #endif
 
 #define FNET_CPU_CLOCK_KHZ       (FNET_CFG_CPU_CLOCK_HZ/1000)     
@@ -338,7 +351,7 @@
  *           @n @n NOTE: User application should not change this parameter. 
  ******************************************************************************/
 #ifndef FNET_CFG_CPU_TIMER_VECTOR_NUMBER
-    #error "FNET_CFG_CPU_TIMER_VECTOR_NUMBER is not defined."
+//TODO    #error "FNET_CFG_CPU_TIMER_VECTOR_NUMBER is not defined."
 #endif
 
 /**************************************************************************/ /*!
@@ -579,7 +592,7 @@
 #endif    
 #if FNET_CFG_CPU_ETH0    
 #ifndef FNET_CFG_CPU_ETH0_VECTOR_NUMBER
-    #error "FNET_CFG_CPU_ETH0_VECTOR_NUMBER is not defined."
+//TODO    #error "FNET_CFG_CPU_ETH0_VECTOR_NUMBER is not defined."
 #endif
 #endif
     
