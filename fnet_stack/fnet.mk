@@ -31,6 +31,8 @@ FNETSRC += 	$(FNET_STACK)/cpu/fnet_cpu.c \
 			$(FNET_STACK)/cpu/mpc/fnet_mpc_serial.c \
 			$(FNET_STACK)/cpu/mpc/fnet_mpc_stdlib.c \
 			$(FNET_STACK)/cpu/mpc/fnet_mpc_timer.c \
+			$(FNET_STACK)/cpu/stm32/fnet_stm32_mac.c \
+			$(FNET_STACK)/cpu/stm32/fnet_stm32_eth.c \
 			$(FNET_STACK)/os/ChibiOS/fnet_chibios.c \
 			$(FNET_STACK)/os/brtos/fnet_brtos.c \
 			$(FNET_STACK)/os/freertos/fnet_freertos.c \
@@ -86,6 +88,7 @@ FNETSRC += 	$(FNET_STACK)/cpu/fnet_cpu.c \
  			$(FNET_STACK)/cpu/mcf \
  			$(FNET_STACK)/cpu/mk \
  			$(FNET_STACK)/cpu/mpc \
+ 			$(FNET_STACK)/cpu/stm32 \
  			$(FNET_STACK)/os \
  			$(FNET_STACK)/os/ChibiOS \
  			$(FNET_STACK)/services \

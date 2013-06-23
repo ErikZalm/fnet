@@ -61,6 +61,10 @@
     #include "fnet_mpc.h"
 #endif  
 
+#if FNET_STM32     /* STM.*/
+    #include "fnet_stm32.h"
+#endif  
+
 /*! @addtogroup fnet_socket */
 /*! @{ */
 

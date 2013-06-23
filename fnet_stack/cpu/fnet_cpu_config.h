@@ -92,7 +92,7 @@
     #define FNET_CFG_CPU_MK60N512   (0)
 #endif 
 #ifndef FNET_CFG_CPU_MK70FN1
-    #define FNET_CFG_CPU_MK70FN1   	(0)
+    #define FNET_CFG_CPU_MK70FN1    (0)
 #endif
 
 #ifndef FNET_CFG_CPU_MK60FN1
