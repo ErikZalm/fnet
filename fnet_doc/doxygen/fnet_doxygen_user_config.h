@@ -1,9 +1,14 @@
 #ifndef _DOXYGEN_USER_CONFIG_H_
 #define _DOXYGEN_USER_CONFIG_H_
 
-#define FNET_CFG_COMP_CW            (1)
+#define FNET_CFG_COMP_CW            (0)
 #define FNET_CFG_CPU_MCF52259       (0)
-#define FNET_CFG_CPU_MCF54418		(1)
+#define FNET_CFG_CPU_MCF54418       (0)
+
+#define FNET_CFG_COMP_GNUC          (1)
+
+#define FNET_STM32                  (1)
+#define FNET_CFG_CPU_STM32F4        (1)
 
 #define FNET_CFG_TCP                (1)
 #define FNET_CFG_TCP_URGENT         (1)
@@ -53,6 +58,7 @@
 #define FNET_CFG_OS_MUTEX               (1)
 #define FNET_CFG_OS_ISR                 (1)
 #define FNET_CFG_OS_EVENT               (1)
+#define FNET_CFG_OS_CHIBIOS             (1)
 
 #define FNET_CFG_CPU_LITTLE_ENDIAN      (1)
 #define FNET_MCF                        (1)

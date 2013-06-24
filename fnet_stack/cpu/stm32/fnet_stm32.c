@@ -30,88 +30,63 @@
 *
 **********************************************************************/ /*!
 *
-* @file fnet_mk.h
+* @file fnet_stm32.c
 *
 * @author Andrey Butok
 *
-* @date Aug-2-2012
+* @date Jun-23-2013
 *
-* @version 0.1.11.0
+* @version 0.1.7.0
 *
-* @brief Private. Kinetis Peripheral Registers definitions.
+* @brief CPU-specific API implementation.
 *
 ***************************************************************************/
+#include "fnet.h"
 
-#ifndef _FNET_STM32_H_
+#if FNET_STM32
 
-#define _FNET_STM32_H_
-
-
-#include "fnet_config.h"
-#include "fnet_comp.h"
-
-#if FNET_STM32 
-
-/*********************************************************************
-*
-* The basic data types.
-*
-*********************************************************************/
-typedef unsigned char fnet_uint8;       /*  8 bits */
-
-typedef unsigned short int fnet_uint16; /* 16 bits */
-typedef unsigned long int fnet_uint32;  /* 32 bits */
-
-typedef signed char fnet_int8;          /*  8 bits */
-typedef signed short int fnet_int16;    /* 16 bits */
-typedef signed long int fnet_int32;     /* 32 bits */
-
-typedef volatile fnet_uint8 fnet_vuint8;     /*  8 bits */
-typedef volatile fnet_uint16 fnet_vuint16;   /* 16 bits */
-typedef volatile fnet_uint32 fnet_vuint32;   /* 32 bits */
-
-
-void fnet_mk_irq_enable(fnet_uint32 irq_desc);
-fnet_uint32 fnet_mk_irq_disable(void);
-
-
-/* Ensure that the Thumb bit is set.*/
-//#define FNET_CPU_INSTRUCTION_ADDR(addr)    ((addr)|0x1)
 
 /************************************************************************
-* Kinetis peripheral clock in KHZ.
+* NAME: fnet_cpu_reset
+*
+* DESCRIPTION: Initiate software reset.
 *************************************************************************/
+void fnet_cpu_reset (void)
+{
+    /* Application Interrupt and Reset Control Register.*/
+    /* To write to this register, you must write 0x5FA to the VECTKEY field.*/
+    FNET_MK_SCB_AIRCR = FNET_MK_SCB_AIRCR_VECTKEY(0x5fa)|FNET_MK_SCB_AIRCR_SYSRESETREQ_MASK; /* Asserts a signal to the outer system that requests a reset.*/
+ 
+}
 
+/************************************************************************
+* NAME: fnet_cpu_irq_disable
+*
+* DESCRIPTION: Disable IRQs
+*************************************************************************/
+fnet_cpu_irq_desc_t fnet_cpu_irq_disable(void)
+{
+     return fnet_mk_irq_disable();  
+}
 
-/*********************************************************************
-* Fast Ethernet Controller (FEC)
-*********************************************************************/
+/************************************************************************
+* NAME: fnet_cpu_irq_enable
+*
+* DESCRIPTION: Enables IRQs.
+*************************************************************************/
+void fnet_cpu_irq_enable(fnet_cpu_irq_desc_t irq_desc)
+{
+    fnet_mk_irq_enable(irq_desc);
+}
 
+/************************************************************************
+* NAME: fnet_mk_periph_clk_khz
+*
+* DESCRIPTION: Kinetis peripheral clock in KHZ.
+*************************************************************************/
+unsigned long fnet_mk_periph_clk_khz(void)
+{
+    return (FNET_CPU_CLOCK_KHZ / (((FNET_MK_SIM_CLKDIV1 & FNET_MK_SIM_CLKDIV1_OUTDIV2_MASK) >> 24)+ 1));
+}
 
-#endif /* FNET_STM32 */
-
-#endif /*_FNET_STM32_H_*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif /*FNET_STM32*/

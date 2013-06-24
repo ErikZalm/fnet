@@ -60,21 +60,6 @@
 
 
 /* CPU-specific configuration.*/
-#if FNET_MCF    /* ColdFire.*/ 
-    #define FNET_FEC_CLOCK_KHZ  FNET_CPU_CLOCK_KHZ
-    /* Transmit buffer descriptor queue. This pointer 
-     * must be 32-bit aligned; however, it is recommended it be 
-     * made 128-bit aligned (evenly divisible by 16).*/
-    #define FNET_FEC_BUF_DESC_DIV       (16)
-    /* The transmit buffer pointer, containing the address 
-     * of the associated data buffer, 
-     * must always be evenly divisible by 4.*/
-    #define FNET_FEC_TX_BUF_DIV         (4)
-    /* The receive buffer pointer, containing the address 
-     * of the associated data buffer, 
-     * must always be evenly divisible by 16.*/
-    #define FNET_FEC_RX_BUF_DIV         (16)
-#endif
 
 #if FNET_MK     /* Kinetis.*/
     #define FNET_FEC_CLOCK_KHZ  FNET_MK_PERIPH_CLOCK_KHZ
@@ -92,25 +77,6 @@
     #define FNET_FEC_RX_BUF_DIV         (16)
 #endif   
 
-#if FNET_MPC    /* Bolero3M.*/ 
-    #if FNET_CFG_CPU_MPC564xBC
-        #define FNET_FEC_CLOCK_KHZ  (FNET_CPU_CLOCK_KHZ/2)
-    #else
-        #define FNET_FEC_CLOCK_KHZ  (FNET_CPU_CLOCK_KHZ)
-    #endif                
-    /* Transmit buffer descriptor queue. This pointer 
-     * must be 32-bit aligned; however, it is recommended it be 
-     * made 128-bit aligned (evenly divisible by 16).*/
-    #define FNET_FEC_BUF_DESC_DIV       (16)
-    /* The transmit buffer pointer, containing the address 
-     * of the associated data buffer, 
-     * must always be evenly divisible by 4.*/
-    #define FNET_FEC_TX_BUF_DIV         (8)
-    /* The receive buffer pointer, containing the address 
-     * of the associated data buffer, 
-     * must always be evenly divisible by 16.*/
-    #define FNET_FEC_RX_BUF_DIV         (16)
-#endif
 
 /* frequency of less than or equal to 2.5 MHz to be compliant with 
 * the IEEE 802.3 MII specification. */
@@ -159,9 +125,6 @@
 *************************************************************************/
 typedef struct
 {                    /* Detailed Memory Map (Control/Status Registers)*/
-#if FNET_MPC
-    fnet_uint8  reserved0[4100];    /*Reserved 4100 bytes (Base+0x0000-0x0103)*/
-#endif
     fnet_uint32 EIR;                /* Interrupt even reg. */
     fnet_uint32 EIMR;               /* Interrupt mask reg. */
     fnet_uint32 reserved1[1]; 
@@ -504,34 +467,34 @@ extern const fnet_netif_api_t fnet_fec_api;
 /************************************************************************
 *     Function Prototypes
 *************************************************************************/
-int fnet_fec_init(fnet_netif_t *netif);
-void fnet_fec_release(fnet_netif_t *netif);
-void fnet_fec_input(fnet_netif_t *netif);
-int fnet_fec_get_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr);
-int fnet_fec_set_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr);
-int fnet_fec_is_connected(fnet_netif_t *netif);
-int fnet_fec_get_statistics(struct fnet_netif *netif, struct fnet_netif_statistics * statistics);
-void fnet_fec_output(fnet_netif_t *netif, unsigned short type, const fnet_mac_addr_t dest_addr, fnet_netbuf_t* nb);
+int fnet_stm32_init(fnet_netif_t *netif);
+void fnet_stm32_release(fnet_netif_t *netif);
+void fnet_stm32_input(fnet_netif_t *netif);
+int fnet_stm32_get_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr);
+int fnet_stm32_set_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr);
+int fnet_stm32_is_connected(fnet_netif_t *netif);
+int fnet_stm32_get_statistics(struct fnet_netif *netif, struct fnet_netif_statistics * statistics);
+void fnet_stm32_output(fnet_netif_t *netif, unsigned short type, const fnet_mac_addr_t dest_addr, fnet_netbuf_t* nb);
 
 /* Ethernet IO initialization.*/
 void fnet_eth_io_init(void) ;
 /* Ethernet On-chip Physical Transceiver initialization and/or reset. */
 void fnet_eth_phy_init(fnet_fec_if_t *ethif);
 
-int fnet_fec_mii_write(fnet_fec_if_t *ethif, int reg_addr, fnet_uint16 data);
-int fnet_fec_mii_read(fnet_fec_if_t *ethif, int reg_addr, fnet_uint16 *data); 
+int fnet_stm32_mii_write(fnet_fec_if_t *ethif, int reg_addr, fnet_uint16 data);
+int fnet_stm32_mii_read(fnet_fec_if_t *ethif, int reg_addr, fnet_uint16 *data); 
 
 #if FNET_CFG_MULTICAST      
-void fnet_fec_multicast_join(fnet_netif_t *netif, fnet_mac_addr_t multicast_addr);
-void fnet_fec_multicast_leave(fnet_netif_t *netif, fnet_mac_addr_t multicast_addr);
+void fnet_stm32_multicast_join(fnet_netif_t *netif, fnet_mac_addr_t multicast_addr);
+void fnet_stm32_multicast_leave(fnet_netif_t *netif, fnet_mac_addr_t multicast_addr);
 #endif /* FNET_CFG_MULTICAST */
 
 /* For debug needs.*/
-void fnet_fec_output_frame(fnet_netif_t *netif, char* frame, int frame_size);
-int fnet_fec_input_frame(fnet_netif_t *netif, char* buf, int buf_size);    
-void fnet_fec_debug_mii_print_regs(fnet_netif_t *netif);
-void fnet_fec_stop(fnet_netif_t *netif);
-void fnet_fec_resume(fnet_netif_t *netif);
+void fnet_stm32_output_frame(fnet_netif_t *netif, char* frame, int frame_size);
+int fnet_stm32_input_frame(fnet_netif_t *netif, char* buf, int buf_size);    
+void fnet_stm32_debug_mii_print_regs(fnet_netif_t *netif);
+void fnet_stm32_stop(fnet_netif_t *netif);
+void fnet_stm32_resume(fnet_netif_t *netif);
 
 
 #endif /* (FNET_STM32) && FNET_CFG_ETH */
