@@ -4,7 +4,7 @@ ifeq ($(FNET_STACK),)
 	FNET_STACK = ../ext/fnet/fnet_stack
 endif
 
-FNETSRC += 	$(FNET_STACK)/cpu/fnet_cpu.c \
+FNETSRC +=		$(FNET_STACK)/cpu/fnet_cpu.c \
 			$(FNET_STACK)/cpu/common/fnet_fec.c \
 			$(FNET_STACK)/cpu/mcf/fnet_mcf.c \
 			$(FNET_STACK)/cpu/mcf/fnet_mcf_cache.c \
@@ -79,7 +79,8 @@ FNETSRC += 	$(FNET_STACK)/cpu/fnet_cpu.c \
 			$(FNET_STACK)/stack/fnet_stdlib.c \
 			$(FNET_STACK)/stack/fnet_tcp.c \
 			$(FNET_STACK)/stack/fnet_timer.c \
-			$(FNET_STACK)/stack/fnet_udp.c
+			$(FNET_STACK)/stack/fnet_udp.c \
+			/STM32/ChibiFNET/ChibiOS/ext/fnet/fnet_demos/common/fnet_application/fapp.c
 
  FNETINC += $(FNET_STACK) \
  			$(FNET_STACK)/compiler \
@@ -103,5 +104,6 @@ FNETSRC += 	$(FNET_STACK)/cpu/fnet_cpu.c \
  			$(FNET_STACK)/services/shell \
  			$(FNET_STACK)/services/telnet \
  			$(FNET_STACK)/services/tftp \
- 			$(FNET_STACK)/stack
+ 			$(FNET_STACK)/stack \
+                        $(FNET_STACK)/fnet_demos/common/fnet_application 
  

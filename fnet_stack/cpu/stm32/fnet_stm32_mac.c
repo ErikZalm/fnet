@@ -44,7 +44,7 @@
 ***************************************************************************/
 
 #include "fnet_config.h"
-#if (FNET_STM32) && (FNET_CFG_CPU_ETH0 ||FNET_CFG_CPU_ETH1)
+#if (!FNET_STM32) && (FNET_CFG_CPU_ETH0 ||FNET_CFG_CPU_ETH1)
 
 #include "fnet_stm32_mac.h"
 

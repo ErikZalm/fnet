@@ -136,7 +136,7 @@ int fnet_stm32_get_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr);
 int fnet_stm32_set_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr);
 int fnet_stm32_is_connected(fnet_netif_t *netif);
 int fnet_stm32_get_statistics(struct fnet_netif *netif, struct fnet_netif_statistics * statistics);
-void fnet_stm32_output(fnet_netif_t *netif, unsigned short type, const fnet_mac_addr_t dest_addr, fnet_netbuf_t* nb);
+void fnet_stm32_eth_output(fnet_netif_t *netif, unsigned short type, const fnet_mac_addr_t dest_addr, fnet_netbuf_t* nb);
 
 /* Ethernet IO initialization.*/
 void fnet_eth_io_init(void) ;
