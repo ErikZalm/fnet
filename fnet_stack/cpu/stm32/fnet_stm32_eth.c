@@ -148,14 +148,15 @@ int fnet_stm32_init(fnet_netif_t *netif)
   //char mac_str[FNET_MAC_ADDR_STR_SIZE];
   //fnet_str_to_mac // fnet_eth.h
   
-  static fnet_mac_addr_t thisif_mac_addr = { 0xC2,0xAF,0x51,0x03,0xCF,0x46 };
+  //see mac_lld.c in hal STM32
+  //static uint8_t thisif_mac_addr[] = {0xAA, 0x55, 0x13, 0x37, 0x01, 0x10};
   
-  static MACConfig mac_config = { thisif_mac_addr };
-  //netif->api->get_hw_addr(netif, mac_config.mac_address); // Set ptr mac addr[]
+  //static MACConfig mac_config = { thisif_mac_addr };
+  ////netif->api->get_hw_addr(netif, mac_config.mac_address); // Set ptr mac addr[]
   
   // netif->if_ptr->if_cpu_ptr is &ETHD1 (MACDriver type) in this case
   //?macStart((MACDriver *)(((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr), &mac_config);
-  macStart(&ETHD1, &mac_config);  // step 2
+  macStart(&ETHD1, NULL);  // step 2
   // step 3: 3.1 netif add, default, set up, ethernetif_init
   //   3.1: LINK_SPEED, netif->state, IFNAME
   // set output functions 3.2 3.3 (~redundant),
@@ -174,8 +175,8 @@ int fnet_stm32_init(fnet_netif_t *netif)
   
 }
 
-void fnet_stm32_release(fnet_netif_t *netif);
-void fnet_stm32_input(fnet_netif_t *netif);
+void fnet_stm32_release(fnet_netif_t *netif) { macStop(&ETHD1); }
+void fnet_stm32_input(fnet_netif_t *netif) {}
 
 /************************************************************************
 * NAME: fnet_stm32_get_mac_addr
@@ -235,7 +236,7 @@ int fnet_stm32_set_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr)
 	return FNET_OK;
 }
 
-int fnet_stm32_is_connected(fnet_netif_t *netif) { (void) netif;}
+int fnet_stm32_is_connected(fnet_netif_t *netif) { (void) netif; return (int)macPollLinkStatus(&ETHD1);}
 int fnet_stm32_get_statistics(struct fnet_netif *netif, struct fnet_netif_statistics * statistics) 
 {
   (void) netif; (void) statistics;
@@ -251,9 +252,13 @@ void fnet_stm32_eth_output(	fnet_netif_t *netif, unsigned short type,
 {
   struct pbuf *q;
   MACTransmitDescriptor td;
-
-  //fnet_fec_if_t *ethif = ((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr; 
-  MACDriver *ethif = ((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr;
+  
+  // set td from inputs ^^^
+  
+  macWaitTransmitDescriptor(&ETHD1, &td, TIME_INFINITE);  // retval RDY_OK, RDY_TIMEOUT
+  macReleaseTransmitDescriptor(&td);
+  ////fnet_fec_if_t *ethif = ((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr; 
+  //MACDriver *ethif = ((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr;
   fnet_eth_header_t * ethheader;
 
 /*  if((nb!=0) && (nb->total_length<=netif->mtu)) 

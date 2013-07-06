@@ -32,7 +32,7 @@
 *
 * @file fnet_chibios.c
 *
-* @author Jon Elliott, Andrey Butok
+* @author inca
 *
 * @brief Default ChibiOS specific functions. @n
 *        Experimental. Not supported.
@@ -45,8 +45,9 @@
 
 #if FNET_CFG_OS && FNET_CFG_OS_CHIBIOS
 
+#if FNET_CFG_OS_EVENT
+
 static BSEMAPHORE_DECL(FnetSemaphore, 0);
-static MUTEX_DECL(FnetMutex);
 
 /************************************************************************
 * NAME: fnet_os_event_init
@@ -79,6 +80,60 @@ void fnet_os_event_raise(void)
 {
    chBSemSignal(&FnetSemaphore);
 }
+
+#endif /* FNET_CFG_OS_EVENT */
+
+#if FNET_CFG_OS_ISR
+
+/************************************************************************
+* NAME: fnet_os_isr;
+*
+* DESCRIPTION: This handler is executed on every FNET interrupt 
+*              (from ethernet and timer module).
+*              Extructs vector number and calls fnet_isr_handler().
+*************************************************************************/
+void fnet_os_isr(void)
+{
+  /*******************************
+   * OS-specific Interrupt Enter.
+   *******************************/
+  CH_IRQ_PROLOGUE();
+  //chSysLockFromIsr();
+
+//brtos stuff...
+//  OS_SAVE_ISR();
+//  OS_INT_ENTER();
+
+  /* brtos: Call original CPU handler*/
+  //fnet_cpu_isr();
+  
+  // TODO: Open ?
+  // CH_IRQ_HANDLER(irq_handler) {
+  // serve_interrupt(); ?
+  
+  /* Index the interrupt vector from the ICSR via CMSIS NVIC. 
+  ICSR: Interrupt Control and State Register 
+  http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0553a/Cihfaaha.html */
+  fnet_uint16 vector_number = (fnet_uint16) (ICSR_VECTACTIVE_MASK & SCB_ICSR);
+  fnet_isr_handler(vector_number);
+
+
+  /*******************************
+   * Interrupt Exit.
+   *******************************/
+  //chSysUnlockFromIsr();
+  CH_IRQ_EPILOGUE();
+
+//brtos stuff...
+//  OS_INT_EXIT();  
+//  OS_RESTORE_ISR();
+}
+
+#endif
+
+#if FNET_CFG_OS_MUTEX
+
+static MUTEX_DECL(FnetMutex);
 
 /************************************************************************
 * NAME: fnet_os_mutex_init
@@ -120,6 +175,7 @@ void fnet_os_mutex_release(void)
 {
 
 }
+#endif /* FNET_CFG_OS_MUTEX */
 
 #if FNET_CFG_OS_TIMER
 
@@ -138,8 +194,8 @@ static void gpt_fnet_cb(GPTDriver *gptp) {
  * GPT2 configuration.
  */
 static const GPTConfig gpt_fnet_cfg = {
-  100000,    /* 100kHz timer clock.*/
-  gpt_fnet_cb    /* Timer callback.*/
+  100000,         /* 100kHz timer clock.*/
+  gpt_fnet_cb     /* Timer callback.*/
 };
 
 /************************************************************************
