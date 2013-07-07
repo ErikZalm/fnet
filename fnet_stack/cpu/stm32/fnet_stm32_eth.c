@@ -139,16 +139,16 @@ fnet_netif_t fnet_eth0_if =
 static WORKING_AREA(wa_fnet_read_thread, 128);
 static msg_t fnet_read_thread(void *arg) {
    (void)arg;
-   MACReceiveDescriptor * rdp;
+   MACReceiveDescriptor rd;
    fnet_eth_header_t * ethheader;
    fnet_netbuf_t * nb=0;
    size_t size;
    chRegSetThreadName("fnet read thread");
 
    while (TRUE) {
-      if (macWaitReceiveDescriptor(&ETHD1, rdp, MS2ST(50)) == RDY_OK) {
+      if (macWaitReceiveDescriptor(&ETHD1, &rd, MS2ST(50)) == RDY_OK) {
 //         macReadReceiveDescriptor(&rd, (uint8_t *)q->payload, (size_t)q->len);
-         ethheader = (fnet_eth_header_t *)macGetNextReceiveBuffer(rdp, &size); /* Point to the ethernet header.*/
+         ethheader = (fnet_eth_header_t *)rd.physdesc->rdes2; /* Point to the ethernet header.*/
 
          fnet_eth_trace("\nRX", ethheader); /* Print ETH header.*/
 
@@ -159,7 +159,7 @@ static msg_t fnet_read_thread(void *arg) {
             fnet_eth_prot_input(&fnet_eth0_if, nb, ethheader->type);
 //TODO            recvPackets++;
          }
-         macReleaseReceiveDescriptor(rdp);
+         macReleaseReceiveDescriptor(&rd);
       }
    }
 }
@@ -173,7 +173,9 @@ static msg_t fnet_read_thread(void *arg) {
 int fnet_stm32_init(fnet_netif_t *netif)
 {
   (void) netif;
-  static const MACConfig mac_config = { 0x12,0x34,0x56,0x78,0x9A,0xBC };
+  uint8_t mac_addr[6]= { 0x12,0x34,0x56,0x78,0x9A,0xBC };
+  static MACConfig mac_config;
+  mac_config.mac_address = mac_addr;
 
   // Init mac.
   macStart(&ETHD1, &mac_config);
@@ -260,59 +262,23 @@ void fnet_stm32_eth_output(	fnet_netif_t *netif, unsigned short type,
   struct pbuf *q;
   MACTransmitDescriptor td;
   
-  // set td from inputs ^^^
-  
-  macWaitTransmitDescriptor(&ETHD1, &td, TIME_INFINITE);  // retval RDY_OK, RDY_TIMEOUT
-  macReleaseTransmitDescriptor(&td);
-  ////fnet_fec_if_t *ethif = ((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr; 
-  //MACDriver *ethif = ((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr;
-  fnet_eth_header_t * ethheader;
-
-/*  if((nb!=0) && (nb->total_length<=netif->mtu)) 
+  if((nb!=0) && (nb->total_length<=netif->mtu))
   {
-    while(ethif->tx_buf_desc_cur->status & FNET_HTONS(FNET_FEC_TX_BD_R))
-    {};
- 
-    ethheader = (fnet_eth_header_t *)fnet_ntohl((unsigned long)ethif->tx_buf_desc_cur->buf_ptr);
-  
-    fnet_netbuf_to_buf(nb, 0, FNET_NETBUF_COPYALL, (void *)((unsigned long)ethheader + FNET_ETH_HDR_SIZE));    
+       macWaitTransmitDescriptor(&ETHD1, &td, TIME_INFINITE);
 
-#if FNET_CFG_CPU_ETH_HW_TX_PROTOCOL_CHECKSUM && FNET_FEC_HW_TX_PROTOCOL_CHECKSUM_FIX
-    // If an IP frame with a known protocol is transmitted, 
-    // the checksum is inserted automatically into the frame. 
-    // The checksum field MUST be cleared. 
-    // This is workaround, in case the checksum is not cleared.
-    if((nb->flags & FNET_NETBUF_FLAG_HW_PROTOCOL_CHECKSUM) == 0)
-    {
-//      fnet_fec_checksum_clear(type, (char *)ethheader + FNET_ETH_HDR_SIZE, nb->total_length);
-    }
-#endif
+       fnet_eth_header_t *ethHeader = (fnet_eth_header_t *)td.physdesc->tdes2;
 
-    fnet_memcpy (ethheader->destination_addr, dest_addr, sizeof(fnet_mac_addr_t));
-  
-    fnet_stm32_get_mac_addr(ethif, &ethheader->source_addr);
-  
-    ethheader->type=fnet_htons(type);
-  
-     
-    ethif->tx_buf_desc_cur->length = fnet_htons((unsigned short)(FNET_ETH_HDR_SIZE + nb->total_length));
-    ethif->tx_buf_desc_cur->status |= FNET_HTONS(FNET_FEC_TX_BD_R); // Set Frame ready for transmit.
-  
-    // Update pointer to next entry.
-    if (ethif->tx_buf_desc_cur->status & FNET_HTONS(FNET_FEC_RX_BD_W))
-      ethif->tx_buf_desc_cur = ethif->tx_buf_desc;
-    else
-      ethif->tx_buf_desc_cur++;
-   
-    while(ethif->reg->TDAR) // Workaround.
-    {};
+       fnet_memcpy (ethHeader->destination_addr, dest_addr, sizeof(fnet_mac_addr_t));
 
-    ethif->reg->TDAR=FNET_FEC_TDAR_X_DES_ACTIVE; // Indicate that there has been a transmit buffer produced.
+       fnet_stm32_get_hw_addr(netif, ethHeader->source_addr);
 
-#if !FNET_CFG_CPU_ETH_MIB       
-    ((fnet_eth_if_t *)(netif->if_ptr))->statistics.tx_packet++;
-#endif      
-  } */
+       ethHeader->type=fnet_htons(type);
+
+       fnet_netbuf_to_buf(nb, 0, FNET_NETBUF_COPYALL, (void *)((unsigned long)ethHeader + FNET_ETH_HDR_SIZE));
+
+ //      size = nb->total_length + FNET_ETH_HDR_SIZE;
+       macReleaseTransmitDescriptor(&td);
+  }
   
   fnet_netbuf_free_chain(nb);  
 }

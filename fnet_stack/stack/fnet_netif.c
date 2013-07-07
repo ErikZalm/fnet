@@ -389,7 +389,7 @@ int fnet_netif_init( fnet_netif_t *netif, unsigned char *hw_addr, unsigned int h
     
     if(netif && netif->api)
     {
-        fnet_os_mutex_lock();   
+        fnet_os_mutex_lock();
         
         fnet_isr_lock();
         

@@ -134,6 +134,7 @@ void fnet_os_isr(void)
 #if FNET_CFG_OS_MUTEX
 
 static MUTEX_DECL(FnetMutex);
+static int FnetMutexCount;
 
 /************************************************************************
 * NAME: fnet_os_mutex_init
@@ -143,6 +144,7 @@ static MUTEX_DECL(FnetMutex);
 int fnet_os_mutex_init(void)
 {
    chMtxInit(&FnetMutex);
+   FnetMutexCount=0;
    return FNET_OK;
 }
 
@@ -153,7 +155,13 @@ int fnet_os_mutex_init(void)
 *************************************************************************/
 void fnet_os_mutex_lock(void)
 {
-   chMtxLock(&FnetMutex);
+     chSysLock();
+     if (chThdSelf() != FnetMutex.m_owner) {
+       // Not owned. Lock.
+       chMtxLockS(&FnetMutex);
+     }
+     FnetMutexCount++;
+     chSysUnlock();
 }
 
 /************************************************************************
@@ -163,7 +171,12 @@ void fnet_os_mutex_lock(void)
 *************************************************************************/
 void fnet_os_mutex_unlock(void)
 {
-   chMtxUnlock();
+   chSysLock();
+   if (--FnetMutexCount == 0) {
+     // Last owned. Unlock.
+     chMtxUnlockS();
+   }
+   chSysUnlock();
 }
 
 /************************************************************************

@@ -54,7 +54,7 @@
 
 #ifndef FNET_CFG_OS_TIMER
     #define FNET_CFG_OS_TIMER   (1)
-    #define FNET_CHIBIOS_TIMER  GPTD2
+    #define FNET_CHIBIOS_TIMER  GPTD8
 #endif
 
 #ifndef FNET_CFG_OS_MUTEX
