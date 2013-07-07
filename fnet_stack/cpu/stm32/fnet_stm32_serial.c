@@ -25,13 +25,13 @@
 void fnet_cpu_serial_putchar (long port_number, int character)
 {
   (void) port_number;
-  chSequentialStreamPut((BaseSequentialStream *)&SD1, (uint8_t)character);
+//  chSequentialStreamPut((BaseSequentialStream *)&SD1, (uint8_t)character);
  }
 /********************************************************************/
 int fnet_cpu_serial_getchar (long port_number)
 {
   (void) port_number;
-  return chSequentialStreamGet((BaseSequentialStream *)&SD1);
+//  return chSequentialStreamGet((BaseSequentialStream *)&SD1);
 }
 
 /********************************************************************/

@@ -131,6 +131,38 @@ fnet_netif_t fnet_eth0_if =
         // scope_id, features, ip4_addr, ip6_addr[], nd6_if_ptr, pmtu, pmtu_timestamp, pmtu_timer
 };
 
+/************************************************************************
+* NAME: fnet_read_thread
+*
+* DESCRIPTION: FNET read thread. Wait for incoming packages.
+*************************************************************************/
+static WORKING_AREA(wa_fnet_read_thread, 128);
+static msg_t fnet_read_thread(void *arg) {
+   (void)arg;
+   MACReceiveDescriptor * rdp;
+   fnet_eth_header_t * ethheader;
+   fnet_netbuf_t * nb=0;
+   size_t size;
+   chRegSetThreadName("fnet read thread");
+
+   while (TRUE) {
+      if (macWaitReceiveDescriptor(&ETHD1, rdp, MS2ST(50)) == RDY_OK) {
+//         macReadReceiveDescriptor(&rd, (uint8_t *)q->payload, (size_t)q->len);
+         ethheader = (fnet_eth_header_t *)macGetNextReceiveBuffer(rdp, &size); /* Point to the ethernet header.*/
+
+         fnet_eth_trace("\nRX", ethheader); /* Print ETH header.*/
+
+         nb = fnet_netbuf_from_buf( (void *)((unsigned long)ethheader + sizeof(fnet_eth_header_t)),
+               (size - sizeof(fnet_eth_header_t)), FNET_TRUE );
+         if(nb)
+         {
+            fnet_eth_prot_input(&fnet_eth0_if, nb, ethheader->type);
+//TODO            recvPackets++;
+         }
+         macReleaseReceiveDescriptor(rdp);
+      }
+   }
+}
 
 /************************************************************************
 * NAME: inits
@@ -141,38 +173,13 @@ fnet_netif_t fnet_eth0_if =
 int fnet_stm32_init(fnet_netif_t *netif)
 {
   (void) netif;
-  EvTimer evt;
-  EventListener el0, el1;
-  // Bring up MII... which was done in ChibiOS hal init
+  static const MACConfig mac_config = { 0x12,0x34,0x56,0x78,0x9A,0xBC };
 
-  //char mac_str[FNET_MAC_ADDR_STR_SIZE];
-  //fnet_str_to_mac // fnet_eth.h
+  // Init mac.
+  macStart(&ETHD1, &mac_config);
   
-  //see mac_lld.c in hal STM32
-  //static uint8_t thisif_mac_addr[] = {0xAA, 0x55, 0x13, 0x37, 0x01, 0x10};
-  
-  //static MACConfig mac_config = { thisif_mac_addr };
-  ////netif->api->get_hw_addr(netif, mac_config.mac_address); // Set ptr mac addr[]
-  
-  // netif->if_ptr->if_cpu_ptr is &ETHD1 (MACDriver type) in this case
-  //?macStart((MACDriver *)(((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr), &mac_config);
-  macStart(&ETHD1, NULL);  // step 2
-  // step 3: 3.1 netif add, default, set up, ethernetif_init
-  //   3.1: LINK_SPEED, netif->state, IFNAME
-  // set output functions 3.2 3.3 (~redundant),
-  //   3.4 low level init: hwaddr_len, mtu, netif->flags
-  
-  // step 4: Event sources
-  evtInit(&evt, S2ST(5)); // LINK_POLL_INTERVAL, 5 seconds
-  evtStart(&evt);
-  chEvtRegisterMask(&evt.et_es, &el0, PERIODIC_TIMER_ID);
-  chEvtRegisterMask(macGetReceiveEventSource(&ETHD1), &el1, FRAME_RECEIVED_ID);
-  chEvtAddEvents(PERIODIC_TIMER_ID | FRAME_RECEIVED_ID);
-  
-  chThdSetPriority(FNET_THREAD_PRIORITY); // LOWPRIO after init is complete
-  
-  // step 5: start the periodic read tasks here... left out for now. Xcheck lpc ARM example.
-  
+  // Start read thread. This thread prosecces the incoming packages.
+  chThdCreateStatic(wa_fnet_read_thread, sizeof(wa_fnet_read_thread), FNET_THREAD_PRIORITY, fnet_read_thread, NULL);
 }
 
 void fnet_stm32_release(fnet_netif_t *netif) { macStop(&ETHD1); }

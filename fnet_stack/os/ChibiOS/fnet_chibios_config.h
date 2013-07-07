@@ -49,7 +49,7 @@
 /* @{ */
 
 #ifndef FNET_CFG_OS_ISR
-    #define FNET_CFG_OS_ISR     (1)
+    #define FNET_CFG_OS_ISR     (0)
 #endif
 
 #ifndef FNET_CFG_OS_TIMER

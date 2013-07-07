@@ -14,7 +14,7 @@
 #include "fnet.h"
 
 #if FNET_STM32
-
+#if 0
 /************************************************************************
 * NAME: fnet_cpu_irq_disable
 *
@@ -47,5 +47,5 @@ int fnet_cpu_isr_install(unsigned int vector_number, unsigned int priority)
   (void) vector_number, priority;
   return FNET_OK;
 }
-
+#endif
 #endif /*FNET_STM32*/

@@ -4,6 +4,8 @@ ifeq ($(FNET_STACK),)
 	FNET_STACK = ../ext/fnet/fnet_stack
 endif
 
+#			$(FNET_STACK)/cpu/stm32/fnet_stm32_mac.c \
+
 FNETSRC +=		$(FNET_STACK)/cpu/fnet_cpu.c \
 			$(FNET_STACK)/cpu/common/fnet_fec.c \
 			$(FNET_STACK)/cpu/mcf/fnet_mcf.c \
@@ -33,7 +35,6 @@ FNETSRC +=		$(FNET_STACK)/cpu/fnet_cpu.c \
 			$(FNET_STACK)/cpu/mpc/fnet_mpc_timer.c \
                         $(FNET_STACK)/cpu/stm32/fnet_stm32.c \
 			$(FNET_STACK)/cpu/stm32/fnet_stm32_eth.c \
-			$(FNET_STACK)/cpu/stm32/fnet_stm32_mac.c \
 			$(FNET_STACK)/cpu/stm32/fnet_stm32_serial.c \
 			$(FNET_STACK)/os/ChibiOS/fnet_chibios.c \
 			$(FNET_STACK)/os/brtos/fnet_brtos.c \
@@ -82,7 +83,7 @@ FNETSRC +=		$(FNET_STACK)/cpu/fnet_cpu.c \
 			$(FNET_STACK)/stack/fnet_tcp.c \
 			$(FNET_STACK)/stack/fnet_timer.c \
 			$(FNET_STACK)/stack/fnet_udp.c \
-			/STM32/ChibiFNET/ChibiOS/ext/fnet/fnet_demos/common/fnet_application/fapp.c
+#			/STM32/ChibiFNET/ChibiOS/ext/fnet/fnet_demos/common/fnet_application/fapp.c
 
  FNETINC += $(FNET_STACK) \
  			$(FNET_STACK)/compiler \
@@ -107,5 +108,5 @@ FNETSRC +=		$(FNET_STACK)/cpu/fnet_cpu.c \
  			$(FNET_STACK)/services/telnet \
  			$(FNET_STACK)/services/tftp \
  			$(FNET_STACK)/stack \
-                        $(FNET_STACK)/fnet_demos/common/fnet_application 
+ #                       $(FNET_STACK)/fnet_demos/common/fnet_application 
  

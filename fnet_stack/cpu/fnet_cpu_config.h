@@ -213,7 +213,7 @@
         #error "More than one CPU selected FNET_CPU_XXXX"
     #endif
 
-//    #include "fnet_mpc564xbc_config.h"
+    #include "fnet_stm32f4_config.h"
     #define FNET_CPU_STR    "STM32F4"
 #endif
 
@@ -235,6 +235,10 @@
   #define FNET_MPC  (0)
 #endif
 
+#ifndef FNET_STM32
+  #define FNET_STM32  (0)
+#endif
+
 /*-----------*/
 #if FNET_MCF
     #include "fnet_mcf_config.h"
@@ -246,6 +250,10 @@
 
 #if FNET_MPC
     #include "fnet_mpc_config.h"
+#endif
+
+#if FNET_STM32
+    #include "fnet_stm32_config.h"
 #endif
 
 /**************************************************************************/ /*!
