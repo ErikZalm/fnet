@@ -296,13 +296,24 @@ void fnet_stm32_eth_output( fnet_netif_t *netif, unsigned short type,
 
          fnet_eth_header_t *ethHeader = (fnet_eth_header_t *)td.physdesc->tdes2;
 
+         fnet_netbuf_to_buf(nb, 0, FNET_NETBUF_COPYALL, (void *)((unsigned long)ethHeader + FNET_ETH_HDR_SIZE));
+
+#if FNET_CFG_CPU_ETH_HW_TX_PROTOCOL_CHECKSUM && FNET_FEC_HW_TX_PROTOCOL_CHECKSUM_FIX
+    /* If an IP frame with a known protocol is transmitted,
+     * the checksum is inserted automatically into the frame.
+     * The checksum field MUST be cleared.
+     * This is workaround, in case the checksum is not cleared.*/
+    if((nb->flags & FNET_NETBUF_FLAG_HW_PROTOCOL_CHECKSUM) == 0)
+    {
+        fnet_fec_checksum_clear(type, (char *)ethheader + FNET_ETH_HDR_SIZE, nb->total_length);
+    }
+#endif
+
          fnet_memcpy (ethHeader->destination_addr, dest_addr, sizeof(fnet_mac_addr_t));
 
-         fnet_stm32_get_hw_addr(netif, ethHeader->source_addr);
+         fnet_stm32_get_hw_addr(netif, &ethHeader->source_addr);
 
          ethHeader->type=fnet_htons(type);
-
-         fnet_netbuf_to_buf(nb, 0, FNET_NETBUF_COPYALL, (void *)((unsigned long)ethHeader + FNET_ETH_HDR_SIZE));
 
          //      size = nb->total_length + FNET_ETH_HDR_SIZE;
          macReleaseTransmitDescriptor(&td);
