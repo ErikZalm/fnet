@@ -169,7 +169,6 @@ static msg_t fnet_read_thread(void *arg) {
 *
 * DESCRIPTION: Ethernet Physical Transceiver initialization and/or reset.
 *************************************************************************/
-
 int fnet_stm32_init(fnet_netif_t *netif)
 {
   (void) netif;
@@ -182,6 +181,7 @@ int fnet_stm32_init(fnet_netif_t *netif)
   
   // Start read thread. This thread prosecces the incoming packages.
   chThdCreateStatic(wa_fnet_read_thread, sizeof(wa_fnet_read_thread), FNET_THREAD_PRIORITY, fnet_read_thread, NULL);
+  return FNET_OK;
 }
 
 void fnet_stm32_release(fnet_netif_t *netif) { macStop(&ETHD1); }
@@ -194,21 +194,23 @@ void fnet_stm32_input(fnet_netif_t *netif) {}
 *************************************************************************/
 static void fnet_stm32_get_mac_addr(MACDriver *ethif, fnet_mac_addr_t *mac_addr)
 {
-  unsigned i;
-  //MACDriver *ethif = ((ethif->if_ptr)->if_cpu_ptr);
-  for (i = 0; i < 6; i++)
-    (*mac_addr)[i] = (unsigned char)(ethif->config->mac_address)[i];
+   unsigned long tmp;
+
+   tmp=ETH->MACA0LR;
+   (*mac_addr)[0]= (unsigned char)(tmp>>0);
+   (*mac_addr)[1]= (unsigned char)(tmp>>8);
+   (*mac_addr)[2]= (unsigned char)(tmp>>16);
+   (*mac_addr)[3]= (unsigned char)(tmp>>24);
+
+   tmp=ETH->MACA0HR;
+   (*mac_addr)[4]= (unsigned char)(tmp>>0);
+   (*mac_addr)[5]= (unsigned char)(tmp>>8);
 }
 
 int fnet_stm32_get_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr)
 {
-  //fnet_fec_if_t *ethif ;
   MACDriver *ethif;
   int result;
-  //fnet_mac_addr_t macaddr
-  
-  // Get your MAC address here from some 
-  // (&ETHD1->config->mac_address) netif->if_ptr->if_cpu_ptr->config->mac_address.
 
   if(netif && (netif->api->type==FNET_NETIF_TYPE_ETHERNET) 
     && ((ethif = ((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr) != FNET_NULL)
@@ -227,25 +229,52 @@ int fnet_stm32_get_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr)
 
 int fnet_stm32_set_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr)
 {
-  unsigned i;
-  (void)netif;
-  ////MACDriver *ethif = (MACDriver *)((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr);
-  //MACConfig *config = ETHD1.config;
-  //fnet_mac_addr_t *mac_ptr = config->mac_address;
-  //uint8_t *foo = ETHD1.config->mac_address;
-  
-  uint8_t *mac_ptr = ETHD1.config->mac_address;
-  
-//  foo[0] = hw_addr[0];
-  
-  for (i = 0; i < 6; i++)
-    mac_ptr[i] = hw_addr[i];
-  //  (ethif->config->mac_address)[i] = (*hw_addr)[i];
-	  
-	return FNET_OK;
+   MACDriver *ethif;
+   int i;
+   int result;
+
+   /* Set the source address for the controller. */
+   if(netif
+         && (netif->api->type==FNET_NETIF_TYPE_ETHERNET)
+         && ((ethif = ((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr) != 0)
+         && hw_addr
+         && fnet_memcmp(hw_addr,fnet_eth_null_addr,sizeof(fnet_mac_addr_t))
+         && fnet_memcmp(hw_addr,fnet_eth_broadcast,sizeof(fnet_mac_addr_t))
+         && ((hw_addr[0]&0x01)==0x00)) /* Most significant nibble should always be even.*/
+   {
+      ETH->MACA0HR = ((uint32_t)hw_addr[5] << 8) |
+                     ((uint32_t)hw_addr[4] << 0);
+      ETH->MACA0LR = ((uint32_t)hw_addr[3] << 24) |
+                     ((uint32_t)hw_addr[2] << 16) |
+                     ((uint32_t)hw_addr[1] << 8) |
+                     ((uint32_t)hw_addr[0] << 0);
+      ETH->MACA1HR = 0x0000FFFF;
+      ETH->MACA1LR = 0xFFFFFFFF;
+      ETH->MACA2HR = 0x0000FFFF;
+      ETH->MACA2LR = 0xFFFFFFFF;
+      ETH->MACA3HR = 0x0000FFFF;
+      ETH->MACA3LR = 0xFFFFFFFF;
+      ETH->MACHTHR = 0;
+      ETH->MACHTLR = 0;
+      //     mac_lld_set_address(hw_addr);
+      fnet_eth_change_addr_notify(netif);
+
+      result = FNET_OK;
+   }
+   else
+   {
+      result = FNET_ERR;
+   }
+
+   return result;
 }
 
-int fnet_stm32_is_connected(fnet_netif_t *netif) { (void) netif; return (int)macPollLinkStatus(&ETHD1);}
+int fnet_stm32_is_connected(fnet_netif_t *netif) {
+   (void) netif;
+   return (int)macPollLinkStatus(&ETHD1);
+}
+
+
 int fnet_stm32_get_statistics(struct fnet_netif *netif, struct fnet_netif_statistics * statistics) 
 {
   (void) netif; (void) statistics;
@@ -256,31 +285,32 @@ int fnet_stm32_get_statistics(struct fnet_netif *netif, struct fnet_netif_statis
 *
 * DESCRIPTION: Ethernet low-level output function.
 *************************************************************************/
-void fnet_stm32_eth_output(	fnet_netif_t *netif, unsigned short type, 
-							const fnet_mac_addr_t dest_addr, fnet_netbuf_t* nb)
+void fnet_stm32_eth_output( fnet_netif_t *netif, unsigned short type,
+      const fnet_mac_addr_t dest_addr, fnet_netbuf_t* nb)
 {
-  struct pbuf *q;
-  MACTransmitDescriptor td;
-  
-  if((nb!=0) && (nb->total_length<=netif->mtu))
-  {
-       macWaitTransmitDescriptor(&ETHD1, &td, TIME_INFINITE);
+   struct pbuf *q;
+   MACTransmitDescriptor td;
 
-       fnet_eth_header_t *ethHeader = (fnet_eth_header_t *)td.physdesc->tdes2;
+   if((nb!=0) && (nb->total_length<=netif->mtu))
+   {
+      if(macWaitTransmitDescriptor(&ETHD1, &td, MS2ST(50)) == RDY_OK) {
 
-       fnet_memcpy (ethHeader->destination_addr, dest_addr, sizeof(fnet_mac_addr_t));
+         fnet_eth_header_t *ethHeader = (fnet_eth_header_t *)td.physdesc->tdes2;
 
-       fnet_stm32_get_hw_addr(netif, ethHeader->source_addr);
+         fnet_memcpy (ethHeader->destination_addr, dest_addr, sizeof(fnet_mac_addr_t));
 
-       ethHeader->type=fnet_htons(type);
+         fnet_stm32_get_hw_addr(netif, ethHeader->source_addr);
 
-       fnet_netbuf_to_buf(nb, 0, FNET_NETBUF_COPYALL, (void *)((unsigned long)ethHeader + FNET_ETH_HDR_SIZE));
+         ethHeader->type=fnet_htons(type);
 
- //      size = nb->total_length + FNET_ETH_HDR_SIZE;
-       macReleaseTransmitDescriptor(&td);
-  }
-  
-  fnet_netbuf_free_chain(nb);  
+         fnet_netbuf_to_buf(nb, 0, FNET_NETBUF_COPYALL, (void *)((unsigned long)ethHeader + FNET_ETH_HDR_SIZE));
+
+         //      size = nb->total_length + FNET_ETH_HDR_SIZE;
+         macReleaseTransmitDescriptor(&td);
+      }
+   }
+
+   fnet_netbuf_free_chain(nb);
 }
 
 // Perhaps try their eth driver if the stack works out well
