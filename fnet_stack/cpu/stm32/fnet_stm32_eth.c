@@ -147,8 +147,8 @@ static msg_t fnet_read_thread(void *arg) {
 
    while (TRUE) {
       if (macWaitReceiveDescriptor(&ETHD1, &rd, MS2ST(50)) == RDY_OK) {
-//         macReadReceiveDescriptor(&rd, (uint8_t *)q->payload, (size_t)q->len);
          ethheader = (fnet_eth_header_t *)rd.physdesc->rdes2; /* Point to the ethernet header.*/
+         size = rd.size - rd.offset;
 
          fnet_eth_trace("\nRX", ethheader); /* Print ETH header.*/
 
@@ -288,7 +288,6 @@ int fnet_stm32_get_statistics(struct fnet_netif *netif, struct fnet_netif_statis
 void fnet_stm32_eth_output( fnet_netif_t *netif, unsigned short type,
       const fnet_mac_addr_t dest_addr, fnet_netbuf_t* nb)
 {
-   struct pbuf *q;
    MACTransmitDescriptor td;
 
    if((nb!=0) && (nb->total_length<=netif->mtu))

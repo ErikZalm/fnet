@@ -837,7 +837,7 @@
     #undef  FNET_CFG_DEBUG_TRACE_IGMP
     #define FNET_CFG_DEBUG_TRACE_IGMP   (0)    
     #undef  FNET_CFG_DEBUG_TRACE_ETH
-    #define FNET_CFG_DEBUG_TRACE_ETH    (0)    
+    #define FNET_CFG_DEBUG_TRACE_ETH    (0)
     #undef  FNET_CFG_DEBUG_TRACE_ARP
     #define FNET_CFG_DEBUG_TRACE_ARP    (0)      
     #undef  FNET_CFG_DEBUG_TRACE_UDP

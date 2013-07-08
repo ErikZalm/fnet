@@ -219,7 +219,7 @@ static const GPTConfig gpt_fnet_cfg = {
 int fnet_os_timer_init( unsigned int period_ms )
 {
    gptStart(&FNET_CHIBIOS_TIMER, &gpt_fnet_cfg);
-   gptStartContinuous(&FNET_CHIBIOS_TIMER, 100); /* 1ms tick */
+   gptStartContinuous(&FNET_CHIBIOS_TIMER, 100*period_ms);
 }
 
 /************************************************************************
