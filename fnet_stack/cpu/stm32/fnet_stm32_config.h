@@ -55,10 +55,10 @@
 
 
 #ifndef FNET_STM32
-  #define FNET_STM32   (0)
+  #define FNET_STM32   (1)
 #endif
 
-#if FNET_MK
+#if FNET_STM32
 
 /**************************************************************************
  *  Reduced Media Independent Interface (RMII) support.
@@ -123,6 +123,6 @@
 //    #define FNET_CFG_CPU_FLASH_PROGRAM_SIZE         (4)
 #endif 
 
-#endif /* FNET_MK */
+#endif /* FNET_STM32 */
 
-#endif /* _FNET_MK_CONFIG_H_ */
+#endif /* _FNET_STM32_CONFIG_H_ */
