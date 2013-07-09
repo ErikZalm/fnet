@@ -136,7 +136,7 @@ fnet_netif_t fnet_eth0_if =
 *
 * DESCRIPTION: FNET read thread. Wait for incoming packages.
 *************************************************************************/
-static WORKING_AREA(wa_fnet_read_thread, 128);
+static WORKING_AREA(wa_fnet_read_thread, 2048);
 static msg_t fnet_read_thread(void *arg) {
    (void)arg;
    MACReceiveDescriptor rd;
@@ -181,6 +181,7 @@ int fnet_stm32_init(fnet_netif_t *netif)
   
   // Start read thread. This thread prosecces the incoming packages.
   chThdCreateStatic(wa_fnet_read_thread, sizeof(wa_fnet_read_thread), FNET_THREAD_PRIORITY, fnet_read_thread, NULL);
+  macPollLinkStatus(&ETHD1);
   return FNET_OK;
 }
 
@@ -298,24 +299,14 @@ void fnet_stm32_eth_output( fnet_netif_t *netif, unsigned short type,
 
          fnet_netbuf_to_buf(nb, 0, FNET_NETBUF_COPYALL, (void *)((unsigned long)ethHeader + FNET_ETH_HDR_SIZE));
 
-#if FNET_CFG_CPU_ETH_HW_TX_PROTOCOL_CHECKSUM && FNET_FEC_HW_TX_PROTOCOL_CHECKSUM_FIX
-    /* If an IP frame with a known protocol is transmitted,
-     * the checksum is inserted automatically into the frame.
-     * The checksum field MUST be cleared.
-     * This is workaround, in case the checksum is not cleared.*/
-    if((nb->flags & FNET_NETBUF_FLAG_HW_PROTOCOL_CHECKSUM) == 0)
-    {
-        fnet_fec_checksum_clear(type, (char *)ethheader + FNET_ETH_HDR_SIZE, nb->total_length);
-    }
-#endif
-
          fnet_memcpy (ethHeader->destination_addr, dest_addr, sizeof(fnet_mac_addr_t));
 
          fnet_stm32_get_hw_addr(netif, &ethHeader->source_addr);
 
          ethHeader->type=fnet_htons(type);
 
-         //      size = nb->total_length + FNET_ETH_HDR_SIZE;
+         td.offset = nb->total_length + FNET_ETH_HDR_SIZE;
+
          macReleaseTransmitDescriptor(&td);
       }
    }

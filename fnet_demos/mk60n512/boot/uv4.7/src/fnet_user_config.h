@@ -78,7 +78,7 @@
 * You can disable it to speedup UDP applications. 
 * By default it is enabled.
 ******************************************************************************/
-#define FNET_CFG_UDP_CHECKSUM       (1)
+#define FNET_CFG_UDP_CHECKSUM       (0)
 
 /*****************************************************************************
 * IP fragmentation.
