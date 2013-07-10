@@ -49,15 +49,8 @@
 #include "hal.h"
 #include "evtimer.h"
 
-#define PERIODIC_TIMER_ID       1
-#define FRAME_RECEIVED_ID       2
-
 #include "fnet_stm32_eth.h"
 #include "fnet_eth_prv.h"
-
-#ifndef FNET_THREAD_PRIORITY
-#define FNET_THREAD_PRIORITY    LOWPRIO
-#endif
 
 /************************************************************************
 * Network interface API structure.
@@ -89,6 +82,7 @@ const fnet_netif_api_t fnet_stm32_mac_api =
 /*****************************************************************************
 *     Ethernet Control data structure 
 ******************************************************************************/
+
 fnet_eth_if_t fnet_stm32_eth0_if =
 {
     //&fnet_stm32_eth0_if    /* if_cpu_ptr: CPU-specific control data structure of the if. */
@@ -101,18 +95,6 @@ fnet_eth_if_t fnet_stm32_eth0_if =
     ,fnet_stm32_multicast_join
     ,fnet_stm32_multicast_leave
 #endif /* FNET_CFG_MULTICAST */
-    /* Internal parameters.*/
-//    ,(void)NULL //connection_flag
-//    ,(void)NULL //eth_timer    /* Optional ETH timer.*/
-#if FNET_CFG_IP4    
-//    ,arp_if
-#endif   
-#if FNET_CFG_IP6   
-//    ,nd6_if
-#endif 
-#if !FNET_CFG_CPU_ETH_MIB     
- //   ,struct fnet_netif_statistics statistics
-#endif   
 };
 
 /************************************************************************
@@ -131,38 +113,7 @@ fnet_netif_t fnet_eth0_if =
         // scope_id, features, ip4_addr, ip6_addr[], nd6_if_ptr, pmtu, pmtu_timestamp, pmtu_timer
 };
 
-/************************************************************************
-* NAME: fnet_read_thread
-*
-* DESCRIPTION: FNET read thread. Wait for incoming packages.
-*************************************************************************/
-static WORKING_AREA(wa_fnet_read_thread, 2048);
-static msg_t fnet_read_thread(void *arg) {
-   (void)arg;
-   MACReceiveDescriptor rd;
-   fnet_eth_header_t * ethheader;
-   fnet_netbuf_t * nb=0;
-   size_t size;
-   chRegSetThreadName("fnet read thread");
 
-   while (TRUE) {
-      if (macWaitReceiveDescriptor(&ETHD1, &rd, MS2ST(50)) == RDY_OK) {
-         ethheader = (fnet_eth_header_t *)rd.physdesc->rdes2; /* Point to the ethernet header.*/
-         size = rd.size - rd.offset;
-
-         fnet_eth_trace("\nRX", ethheader); /* Print ETH header.*/
-
-         nb = fnet_netbuf_from_buf( (void *)((unsigned long)ethheader + sizeof(fnet_eth_header_t)),
-               (size - sizeof(fnet_eth_header_t)), FNET_TRUE );
-         if(nb)
-         {
-            fnet_eth_prot_input(&fnet_eth0_if, nb, ethheader->type);
-//TODO            recvPackets++;
-         }
-         macReleaseReceiveDescriptor(&rd);
-      }
-   }
-}
 
 /************************************************************************
 * NAME: inits
@@ -172,6 +123,7 @@ static msg_t fnet_read_thread(void *arg) {
 int fnet_stm32_init(fnet_netif_t *netif)
 {
   (void) netif;
+
   uint8_t mac_addr[6]= { 0x12,0x34,0x56,0x78,0x9A,0xBC };
   static MACConfig mac_config;
   mac_config.mac_address = mac_addr;
@@ -179,14 +131,45 @@ int fnet_stm32_init(fnet_netif_t *netif)
   // Init mac.
   macStart(&ETHD1, &mac_config);
   
-  // Start read thread. This thread prosecces the incoming packages.
-  chThdCreateStatic(wa_fnet_read_thread, sizeof(wa_fnet_read_thread), FNET_THREAD_PRIORITY, fnet_read_thread, NULL);
-  macPollLinkStatus(&ETHD1);
+  // Start fnet thread. This thread processes the incoming packages and timers.
+  fnetThdStart();
   return FNET_OK;
 }
 
-void fnet_stm32_release(fnet_netif_t *netif) { macStop(&ETHD1); }
-void fnet_stm32_input(fnet_netif_t *netif) {}
+void fnet_stm32_release(fnet_netif_t *netif) {
+   (void) netif;
+
+   macStop(&ETHD1);
+}
+
+/************************************************************************
+* NAME: fnet_stm32_input
+*
+* DESCRIPTION: This function processes the input frames.
+*              Called from the fnet thread.
+*************************************************************************/
+void fnet_stm32_input(void) {
+   MACReceiveDescriptor rd;
+   fnet_eth_header_t * ethheader;
+   fnet_netbuf_t * nb = 0;
+   size_t size;
+
+   if (macWaitReceiveDescriptor(&ETHD1, &rd, MS2ST(50) ) == RDY_OK) {
+      ethheader = (fnet_eth_header_t *) rd.physdesc->rdes2; /* Point to the ethernet header.*/
+      size = rd.size - rd.offset;
+
+      fnet_eth_trace("\nRX", ethheader); /* Print ETH header.*/
+
+      nb = fnet_netbuf_from_buf(
+            (void *) ((unsigned long) ethheader
+                  + sizeof(fnet_eth_header_t)),
+            (size - sizeof(fnet_eth_header_t)), FNET_TRUE);
+      if (nb) {
+         fnet_eth_prot_input(&fnet_eth0_if, nb, ethheader->type);
+      }
+      macReleaseReceiveDescriptor(&rd);
+   }
+}
 
 /************************************************************************
 * NAME: fnet_stm32_get_mac_addr
@@ -196,6 +179,7 @@ void fnet_stm32_input(fnet_netif_t *netif) {}
 static void fnet_stm32_get_mac_addr(MACDriver *ethif, fnet_mac_addr_t *mac_addr)
 {
    unsigned long tmp;
+   (void) ethif;
 
    tmp=ETH->MACA0LR;
    (*mac_addr)[0]= (unsigned char)(tmp>>0);
@@ -210,38 +194,36 @@ static void fnet_stm32_get_mac_addr(MACDriver *ethif, fnet_mac_addr_t *mac_addr)
 
 int fnet_stm32_get_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr)
 {
-  MACDriver *ethif;
-  int result;
+   MACDriver *ethif;
+   int result;
 
-  if(netif && (netif->api->type==FNET_NETIF_TYPE_ETHERNET) 
-    && ((ethif = ((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr) != FNET_NULL)
-    && (hw_addr) )
-  { 
-    fnet_stm32_get_mac_addr(ethif, (fnet_mac_addr_t *) hw_addr);
-    result = FNET_OK;			
-  }
-  else
-  {
-    result = FNET_ERR;
-  }
+   if(netif && (netif->api->type==FNET_NETIF_TYPE_ETHERNET)
+         && ((ethif = ((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr) != FNET_NULL)
+         && (hw_addr) )
+   {
+      fnet_stm32_get_mac_addr(ethif, (fnet_mac_addr_t *) hw_addr);
+      result = FNET_OK;
+   }
+   else
+   {
+      result = FNET_ERR;
+   }
 
-  return result;
+   return result;
 }
 
 int fnet_stm32_set_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr)
 {
    MACDriver *ethif;
-   int i;
    int result;
 
    /* Set the source address for the controller. */
-   if(netif
-         && (netif->api->type==FNET_NETIF_TYPE_ETHERNET)
-         && ((ethif = ((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr) != 0)
-         && hw_addr
-         && fnet_memcmp(hw_addr,fnet_eth_null_addr,sizeof(fnet_mac_addr_t))
-         && fnet_memcmp(hw_addr,fnet_eth_broadcast,sizeof(fnet_mac_addr_t))
-         && ((hw_addr[0]&0x01)==0x00)) /* Most significant nibble should always be even.*/
+   if(netif && (netif->api->type==FNET_NETIF_TYPE_ETHERNET)
+            && ((ethif = ((fnet_eth_if_t *)(netif->if_ptr))->if_cpu_ptr) != 0)
+            && hw_addr
+            && fnet_memcmp(hw_addr,fnet_eth_null_addr,sizeof(fnet_mac_addr_t))
+            && fnet_memcmp(hw_addr,fnet_eth_broadcast,sizeof(fnet_mac_addr_t))
+            && ((hw_addr[0]&0x01)==0x00)) /* Most significant nibble should always be even.*/
    {
       ETH->MACA0HR = ((uint32_t)hw_addr[5] << 8) |
                      ((uint32_t)hw_addr[4] << 0);
@@ -278,7 +260,9 @@ int fnet_stm32_is_connected(fnet_netif_t *netif) {
 
 int fnet_stm32_get_statistics(struct fnet_netif *netif, struct fnet_netif_statistics * statistics) 
 {
-  (void) netif; (void) statistics;
+  (void) netif;
+  (void) statistics;
+  return FNET_OK;
 }
 
 /************************************************************************
@@ -301,7 +285,7 @@ void fnet_stm32_eth_output( fnet_netif_t *netif, unsigned short type,
 
          fnet_memcpy (ethHeader->destination_addr, dest_addr, sizeof(fnet_mac_addr_t));
 
-         fnet_stm32_get_hw_addr(netif, &ethHeader->source_addr);
+         fnet_stm32_get_hw_addr(netif, (unsigned char *)&ethHeader->source_addr);
 
          ethHeader->type=fnet_htons(type);
 
@@ -324,11 +308,18 @@ void fnet_stm32_eth_output( fnet_netif_t *netif, unsigned short type,
 #endif /* FNET_CFG_MULTICAST */
 
 /* For debug needs.*/
+/*
 void fnet_stm32_output_frame(fnet_netif_t *netif, char* frame, int frame_size) {}
 int fnet_stm32_input_frame(fnet_netif_t *netif, char* buf, int buf_size) {}
+*/
 //void fnet_stm32_debug_mii_print_regs(fnet_netif_t *netif) {}
-void fnet_stm32_stop(fnet_netif_t *netif) {}
-void fnet_stm32_resume(fnet_netif_t *netif) {}
+void fnet_stm32_stop(fnet_netif_t *netif) {
+   (void) netif;
+}
+
+void fnet_stm32_resume(fnet_netif_t *netif) {
+   (void) netif;
+}
 
 #endif /* FNET_MK && FNET_CFG_ETH */
 

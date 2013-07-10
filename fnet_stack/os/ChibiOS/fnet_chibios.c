@@ -42,8 +42,56 @@
 #include "fnet.h"
 #include "ch.h"
 #include "hal.h"
+#include "evtimer.h"
+
+#include "fnet_stm32_eth.h"
+#include "fnet_eth_prv.h"
 
 #if FNET_CFG_OS && FNET_CFG_OS_CHIBIOS
+
+/************************************************************************
+* NAME: fnet_thread
+*
+* DESCRIPTION: FNET thread. Wait for incoming packages.
+*************************************************************************/
+#define PERIODIC_TIMER_ID       1
+#define FRAME_RECEIVED_ID       2
+
+#ifndef FNET_THREAD_PRIORITY
+#define FNET_THREAD_PRIORITY    LOWPRIO
+#endif
+
+static WORKING_AREA(wa_fnet_thread, 2048);
+EvTimer fnetEventTimer;
+
+static msg_t fnet_thread(void *arg) {
+   (void) arg;
+   EventListener el0, el1;
+
+   chRegSetThreadName("FNET thread");
+
+   evtInit(&fnetEventTimer, MS2ST(100) );
+   evtStart(&fnetEventTimer);
+   chEvtRegisterMask(&fnetEventTimer.et_es, &el0, PERIODIC_TIMER_ID);
+   chEvtRegisterMask(macGetReceiveEventSource(&ETHD1), &el1, FRAME_RECEIVED_ID);
+   chEvtAddEvents(PERIODIC_TIMER_ID | FRAME_RECEIVED_ID);
+
+   while (TRUE) {
+      eventmask_t mask = chEvtWaitAny(ALL_EVENTS );
+      if (mask & PERIODIC_TIMER_ID) {
+         fnet_timer_ticks_inc();
+         fnet_timer_handler_bottom(NULL );
+      }
+      if (mask & FRAME_RECEIVED_ID) {
+         fnet_stm32_input();
+      }
+   }
+   return RDY_OK;
+}
+
+void fnetThdStart(void) {
+   chThdCreateStatic(wa_fnet_thread, sizeof(wa_fnet_thread), FNET_THREAD_PRIORITY, fnet_thread, NULL);
+}
 
 #if FNET_CFG_OS_EVENT
 
@@ -82,54 +130,6 @@ void fnet_os_event_raise(void)
 }
 
 #endif /* FNET_CFG_OS_EVENT */
-
-#if FNET_CFG_OS_ISR
-
-/************************************************************************
-* NAME: fnet_os_isr;
-*
-* DESCRIPTION: This handler is executed on every FNET interrupt 
-*              (from ethernet and timer module).
-*              Extructs vector number and calls fnet_isr_handler().
-*************************************************************************/
-void fnet_os_isr(void)
-{
-  /*******************************
-   * OS-specific Interrupt Enter.
-   *******************************/
-  CH_IRQ_PROLOGUE();
-  //chSysLockFromIsr();
-
-//brtos stuff...
-//  OS_SAVE_ISR();
-//  OS_INT_ENTER();
-
-  /* brtos: Call original CPU handler*/
-  //fnet_cpu_isr();
-  
-  // TODO: Open ?
-  // CH_IRQ_HANDLER(irq_handler) {
-  // serve_interrupt(); ?
-  
-  /* Index the interrupt vector from the ICSR via CMSIS NVIC. 
-  ICSR: Interrupt Control and State Register 
-  http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0553a/Cihfaaha.html */
-  fnet_uint16 vector_number = (fnet_uint16) (ICSR_VECTACTIVE_MASK & SCB_ICSR);
-  fnet_isr_handler(vector_number);
-
-
-  /*******************************
-   * Interrupt Exit.
-   *******************************/
-  //chSysUnlockFromIsr();
-  CH_IRQ_EPILOGUE();
-
-//brtos stuff...
-//  OS_INT_EXIT();  
-//  OS_RESTORE_ISR();
-}
-
-#endif
 
 #if FNET_CFG_OS_MUTEX
 
@@ -190,26 +190,7 @@ void fnet_os_mutex_release(void)
 }
 #endif /* FNET_CFG_OS_MUTEX */
 
-#if FNET_CFG_OS_TIMER
-
-/*
- * GPT2 callback.
- */
-static void gpt_fnet_cb(GPTDriver *gptp) {
-
-  (void)gptp;
-  chSysLockFromIsr();
-  fnet_timer_ticks_inc();
-  chSysUnlockFromIsr();
-}
-
-/*
- * GPT2 configuration.
- */
-static const GPTConfig gpt_fnet_cfg = {
-  100000,         /* 100kHz timer clock.*/
-  gpt_fnet_cb     /* Timer callback.*/
-};
+#ifdef FNET_CFG_OS_TIMER
 
 /************************************************************************
 * NAME: fnet_os_timer_init
@@ -218,19 +199,21 @@ static const GPTConfig gpt_fnet_cfg = {
 *************************************************************************/
 int fnet_os_timer_init( unsigned int period_ms )
 {
-   gptStart(&FNET_CHIBIOS_TIMER, &gpt_fnet_cfg);
-   gptStartContinuous(&FNET_CHIBIOS_TIMER, 100*period_ms);
+//   evtStop(&fnetEventTimer);
+//   evtInit(&fnetEventTimer, MS2ST(period_ms) );
+//   evtStart(&fnetEventTimer);
+   return FNET_OK;
 }
 
 /************************************************************************
 * NAME: fnet_os_timer_release
 *
 * DESCRIPTION: Releases OS-Timer/Event.
-*              
+*
 *************************************************************************/
 void fnet_os_timer_release( void )
 {
-   gptStopTimer(&FNET_CHIBIOS_TIMER);
+   evtStop(&fnetEventTimer);
 }
 
 #endif /* FNET_CFG_OS_TIMER */

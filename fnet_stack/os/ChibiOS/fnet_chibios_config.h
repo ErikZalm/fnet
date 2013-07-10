@@ -48,13 +48,8 @@
 /* @addtogroup fnet_os_config  */
 /* @{ */
 
-#ifndef FNET_CFG_OS_ISR
-    #define FNET_CFG_OS_ISR     (0)
-#endif
-
 #ifndef FNET_CFG_OS_TIMER
     #define FNET_CFG_OS_TIMER   (1)
-    #define FNET_CHIBIOS_TIMER  GPTD8
 #endif
 
 #ifndef FNET_CFG_OS_MUTEX

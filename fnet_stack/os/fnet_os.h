@@ -72,9 +72,13 @@
     #define fnet_os_event_raise()       {}
 #endif
 
-//#if FNET_CFG_OS_TIMER
+#if FNET_CFG_OS_TIMER
     int fnet_os_timer_init(unsigned int period_ms);
     void fnet_os_timer_release(void);
-//#endif
+#endif
+
+#ifdef FNET_CFG_OS_CHIBIOS
+    void fnetThdStart(void);
+#endif
 
 #endif /* _FNET_OS_H_ */

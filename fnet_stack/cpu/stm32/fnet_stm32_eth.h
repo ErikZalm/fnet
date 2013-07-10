@@ -131,7 +131,7 @@ typedef struct
 *************************************************************************/
 int fnet_stm32_init(fnet_netif_t *netif);
 void fnet_stm32_release(fnet_netif_t *netif);
-void fnet_stm32_input(fnet_netif_t *netif);
+void fnet_stm32_input(void);
 int fnet_stm32_get_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr);
 int fnet_stm32_set_hw_addr(fnet_netif_t *netif, unsigned char * hw_addr);
 int fnet_stm32_is_connected(fnet_netif_t *netif);
