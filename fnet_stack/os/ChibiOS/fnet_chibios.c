@@ -58,10 +58,10 @@
 #define FRAME_RECEIVED_ID       2
 
 #ifndef FNET_THREAD_PRIORITY
-#define FNET_THREAD_PRIORITY    LOWPRIO
+#define FNET_THREAD_PRIORITY    NORMALPRIO
 #endif
 
-static WORKING_AREA(wa_fnet_thread, 2048);
+static WORKING_AREA(wa_fnet_thread, 1024);
 EvTimer fnetEventTimer;
 
 static msg_t fnet_thread(void *arg) {

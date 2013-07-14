@@ -334,7 +334,7 @@ static void fnet_telnet_send(struct fnet_telnet_session_if *session)
 /************************************************************************
 * NAME: fnet_telnet_send_cmd
 *
-* DESCRIPTION: Wrie command to the TX buffer.
+* DESCRIPTION: Write command to the TX buffer.
 ************************************************************************/
 static void fnet_telnet_send_cmd(struct fnet_telnet_session_if *session, char command, char option )
 {
