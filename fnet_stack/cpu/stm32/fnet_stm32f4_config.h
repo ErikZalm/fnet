@@ -85,22 +85,22 @@
 
 /* To improve the TX performance.*/
 #ifndef FNET_CFG_CPU_ETH_HW_TX_IP_CHECKSUM
-    #define FNET_CFG_CPU_ETH_HW_TX_IP_CHECKSUM          (0)
+    #define FNET_CFG_CPU_ETH_HW_TX_IP_CHECKSUM          (1)
 #endif
 
 /* To improve the TX performance.*/
 #ifndef FNET_CFG_CPU_ETH_HW_TX_PROTOCOL_CHECKSUM
-    #define FNET_CFG_CPU_ETH_HW_TX_PROTOCOL_CHECKSUM    (0)
+    #define FNET_CFG_CPU_ETH_HW_TX_PROTOCOL_CHECKSUM    (1)
 #endif
 
 /* To improve the RX performance.*/
 #ifndef FNET_CFG_CPU_ETH_HW_RX_IP_CHECKSUM
-    #define FNET_CFG_CPU_ETH_HW_RX_IP_CHECKSUM          (0)
+    #define FNET_CFG_CPU_ETH_HW_RX_IP_CHECKSUM          (1)
 #endif
 
 /* To improve the RX performance.*/
 #ifndef FNET_CFG_CPU_ETH_HW_RX_PROTOCOL_CHECKSUM
-    #define FNET_CFG_CPU_ETH_HW_RX_PROTOCOL_CHECKSUM    (0)
+    #define FNET_CFG_CPU_ETH_HW_RX_PROTOCOL_CHECKSUM    (1)
 #endif
 
 /* Discard of frames with MAC layer errors.*/

@@ -154,7 +154,7 @@ void fnet_stm32_input(void) {
    fnet_netbuf_t * nb = 0;
    size_t size;
 
-   if (macWaitReceiveDescriptor(&ETHD1, &rd, MS2ST(50) ) == RDY_OK) {
+   while (macWaitReceiveDescriptor(&ETHD1, &rd, TIME_IMMEDIATE) == RDY_OK) {
       ethheader = (fnet_eth_header_t *) rd.physdesc->rdes2; /* Point to the ethernet header.*/
       size = rd.size - rd.offset;
 
@@ -164,10 +164,12 @@ void fnet_stm32_input(void) {
             (void *) ((unsigned long) ethheader
                   + sizeof(fnet_eth_header_t)),
             (size - sizeof(fnet_eth_header_t)), FNET_TRUE);
+
+      macReleaseReceiveDescriptor(&rd);
+
       if (nb) {
          fnet_eth_prot_input(&fnet_eth0_if, nb, ethheader->type);
       }
-      macReleaseReceiveDescriptor(&rd);
    }
 }
 

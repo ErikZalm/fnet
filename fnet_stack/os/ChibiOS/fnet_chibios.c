@@ -61,27 +61,19 @@
 #define FNET_THREAD_PRIORITY    NORMALPRIO
 #endif
 
-static WORKING_AREA(wa_fnet_thread, 1024);
-EvTimer fnetEventTimer;
+static WORKING_AREA(wa_fnet_receive_thread, 1024);
 
-static msg_t fnet_thread(void *arg) {
+static msg_t fnet_receive_thread(void *arg) {
    (void) arg;
-   EventListener el0, el1;
+   EventListener el1;
 
-   chRegSetThreadName("FNET thread");
+   chRegSetThreadName("FNET receive thread");
 
-   evtInit(&fnetEventTimer, MS2ST(100) );
-   evtStart(&fnetEventTimer);
-   chEvtRegisterMask(&fnetEventTimer.et_es, &el0, PERIODIC_TIMER_ID);
    chEvtRegisterMask(macGetReceiveEventSource(&ETHD1), &el1, FRAME_RECEIVED_ID);
-   chEvtAddEvents(PERIODIC_TIMER_ID | FRAME_RECEIVED_ID);
+   chEvtAddEvents(FRAME_RECEIVED_ID);
 
    while (TRUE) {
       eventmask_t mask = chEvtWaitAny(ALL_EVENTS );
-      if (mask & PERIODIC_TIMER_ID) {
-         fnet_timer_ticks_inc();
-         fnet_timer_handler_bottom(NULL );
-      }
       if (mask & FRAME_RECEIVED_ID) {
          fnet_stm32_input();
       }
@@ -89,8 +81,10 @@ static msg_t fnet_thread(void *arg) {
    return RDY_OK;
 }
 
+
+
 void fnetThdStart(void) {
-   chThdCreateStatic(wa_fnet_thread, sizeof(wa_fnet_thread), FNET_THREAD_PRIORITY, fnet_thread, NULL);
+   chThdCreateStatic(wa_fnet_receive_thread, sizeof(wa_fnet_receive_thread), FNET_THREAD_PRIORITY, fnet_receive_thread, NULL);
 }
 
 #if FNET_CFG_OS_EVENT
@@ -192,16 +186,39 @@ void fnet_os_mutex_release(void)
 
 #ifdef FNET_CFG_OS_TIMER
 
+static WORKING_AREA(wa_fnet_timer_thread, 1024);
+EvTimer fnetEventTimer;
+
+static msg_t fnet_timer_thread(void *period_ms) {
+   EventListener el0;
+
+   chRegSetThreadName("FNET timer thread");
+
+   evtInit(&fnetEventTimer, MS2ST(period_ms) );
+   evtStart(&fnetEventTimer);
+   chEvtRegisterMask(&fnetEventTimer.et_es, &el0, PERIODIC_TIMER_ID);
+   chEvtAddEvents(PERIODIC_TIMER_ID);
+
+   while (TRUE) {
+      eventmask_t mask = chEvtWaitAny(ALL_EVENTS );
+      if (mask & PERIODIC_TIMER_ID) {
+         fnet_timer_ticks_inc();
+         fnet_timer_handler_bottom(NULL );
+      }
+   }
+   return RDY_OK;
+}
+
 /************************************************************************
 * NAME: fnet_os_timer_init
 *
 * DESCRIPTION: Starts OS-Timer/Event. delay_ms - period of timer (ms).
 *************************************************************************/
+unsigned int timer_period_ms;
 int fnet_os_timer_init( unsigned int period_ms )
 {
-//   evtStop(&fnetEventTimer);
-//   evtInit(&fnetEventTimer, MS2ST(period_ms) );
-//   evtStart(&fnetEventTimer);
+   timer_period_ms = period_ms;
+   chThdCreateStatic(wa_fnet_timer_thread, sizeof(wa_fnet_timer_thread), FNET_THREAD_PRIORITY, fnet_timer_thread, (void *)&timer_period_ms);
    return FNET_OK;
 }
 
